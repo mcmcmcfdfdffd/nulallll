@@ -3950,7 +3950,7 @@ print("==========================================")
 -- ========== СИСТЕМА КОНФИГОВ АВТОФАРМА ==========
 
 local AUTOFARM_FOLDER = "TDS_AutoFarm_Configs"
-local SCRIPT_URL = "https://raw.githubusercontent.com/mcmcmcfdfdffd/nulallll/refs/heads/main/TDS%20(AUTOFARM).lua"  -- ЗАМЕНИ НА СВОЮ!
+local SCRIPT_URL = "https://raw.githubusercontent.com/mcmcmcfdfdffd/nulallll/refs/heads/main/null.lua"  -- ЗАМЕНИ НА СВОЮ!
 
 -- Создаём папку для конфигов автофарма
 if isfolder and not isfolder(AUTOFARM_FOLDER) then
@@ -4396,4 +4396,5 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
+
 
