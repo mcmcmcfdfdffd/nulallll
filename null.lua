@@ -3211,34 +3211,34 @@ local function createTowerButtons()
         if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
     end
     
-    -- Если модули ещё не загружены — пробуем загрузить
+    -- Пробуем загрузить если ещё нет
     if not InventoryStore then
-        loadModules()
+        pcall(loadModules)
     end
     
+    -- НЕТ RETURN! Просто берём башни как можем
     local unlocked = getUnlockedTowers()
     
-    -- ПРОВЕРЯЕМ ЧТО ЕСТЬ БАШНИ
     local count = 0
     for _ in pairs(unlocked) do count = count + 1 end
     
     if count == 0 then
+        -- Показываем загрузку но НЕ блокируем остальной UI
         local errorLabel = Instance.new("TextLabel")
         errorLabel.Size = UDim2.new(1, -10, 1, 0)
         errorLabel.BackgroundTransparency = 1
-        errorLabel.Text = "⏳ Загрузка..."
+        errorLabel.Text = "⏳ Загрузка башен..."
         errorLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
         errorLabel.TextSize = 10
         errorLabel.Font = Enum.Font.GothamBold
         errorLabel.Parent = UI.TowerScroll
         
-        -- Попробовать снова через 2 секунды
-        task.delay(2, function()
+        task.delay(3, function()
             if UI.TowerScroll and UI.TowerScroll.Parent then
                 createTowerButtons()
             end
         end)
-        return
+        return  -- тут return ок, это только башни не показались
     end
     
     print("🗼 Найдено башен: " .. count)
@@ -5153,4 +5153,5 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
+
 
