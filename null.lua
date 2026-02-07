@@ -24,60 +24,62 @@ end
 local TowerReplicator, SharedGameFunctions, SharedGameConstants, Asset, InventoryStore, TowerIcons
 
 local function loadModules()
-    if TowerReplicator then return end
+    if TowerReplicator then return end -- уже загружено
     
     print("⏳ Загрузка модулей...")
     
     -- TowerReplicator
     pcall(function()
-        if ReplicatedStorage:FindFirstChild("Client") then
-            local modules = ReplicatedStorage.Client:FindFirstChild("Modules")
-            if modules then
-                -- НОВЫЙ ПУТЬ
-                local replicators = modules:FindFirstChild("Replicators")
-                if replicators and replicators:FindFirstChild("TowerReplicator") then
-                    TowerReplicator = require(replicators.TowerReplicator)
-                    print("✅ TowerReplicator")
-                end
-            end
+        local mod = ReplicatedStorage:FindFirstChild("Client")
+            and ReplicatedStorage.Client:FindFirstChild("Modules")
+            and ReplicatedStorage.Client.Modules:FindFirstChild("Replicators")
+            and ReplicatedStorage.Client.Modules.Replicators:FindFirstChild("TowerReplicator")
+        if mod then
+            TowerReplicator = require(mod)
+            print("✅ TowerReplicator")
         end
     end)
     
-    -- SharedGameFunctions, SharedGameConstants, Asset
+    -- SharedGameFunctions
     pcall(function()
-        if ReplicatedStorage:FindFirstChild("Shared") then
-            local modules = ReplicatedStorage.Shared:FindFirstChild("Modules")
-            if modules then
-                if modules:FindFirstChild("SharedGameFunctions") then
-                    SharedGameFunctions = require(modules.SharedGameFunctions)
-                    print("✅ SharedGameFunctions")
-                end
-                if modules:FindFirstChild("SharedGameConstants") then
-                    SharedGameConstants = require(modules.SharedGameConstants)
-                    print("✅ SharedGameConstants")
-                end
-                if modules:FindFirstChild("Asset") then
-                    Asset = require(modules.Asset)
-                    print("✅ Asset")
-                end
-            end
+        local mod = ReplicatedStorage:FindFirstChild("Shared")
+            and ReplicatedStorage.Shared:FindFirstChild("Modules")
+            and ReplicatedStorage.Shared.Modules:FindFirstChild("SharedGameFunctions")
+        if mod then
+            SharedGameFunctions = require(mod)
+            print("✅ SharedGameFunctions")
         end
     end)
     
-    -- InventoryStore
-pcall(function()
-    local client = ReplicatedStorage:FindFirstChild("Client")
-    if client then
-        local interfaces = client:FindFirstChild("Interfaces")
+    -- SharedGameConstants
+    pcall(function()
+        local mod = ReplicatedStorage:FindFirstChild("Shared")
+            and ReplicatedStorage.Shared:FindFirstChild("Modules")
+            and ReplicatedStorage.Shared.Modules:FindFirstChild("SharedGameConstants")
+        if mod then
+            SharedGameConstants = require(mod)
+            print("✅ SharedGameConstants")
+        end
+    end)
+    
+    -- Asset
+    pcall(function()
+        local mod = ReplicatedStorage:FindFirstChild("Shared")
+            and ReplicatedStorage.Shared:FindFirstChild("Modules")
+            and ReplicatedStorage.Shared.Modules:FindFirstChild("Asset")
+        if mod then
+            Asset = require(mod)
+            print("✅ Asset")
+        end
+    end)
+    
+    -- InventoryStore - пробуем оба пути
+    pcall(function()
+        local interfaces = ReplicatedStorage:FindFirstChild("Client")
+            and ReplicatedStorage.Client:FindFirstChild("Interfaces")
         if interfaces then
-            -- Пробуем сначала LegacyInterface (новый путь)
             local container = interfaces:FindFirstChild("LegacyInterface")
-            
-            -- Если нет — пробуем NewInterface (старый путь)
-            if not container then
-                container = interfaces:FindFirstChild("NewInterface")
-            end
-            
+                or interfaces:FindFirstChild("NewInterface")
             if container then
                 local stores = container:FindFirstChild("Stores")
                 if stores and stores:FindFirstChild("Inventory") then
@@ -86,21 +88,16 @@ pcall(function()
                 end
             end
         end
-    end
-end)
+    end)
     
     -- TowerIcons
     pcall(function()
-        local shared = ReplicatedStorage:FindFirstChild("Shared")
-        if shared then
-            local data = shared:FindFirstChild("Data")
-            if data then
-                local icons = data:FindFirstChild("Icons")
-                if icons then
-                    TowerIcons = require(icons).Towers
-                    print("✅ TowerIcons")
-                end
-            end
+        local mod = ReplicatedStorage:FindFirstChild("Shared")
+            and ReplicatedStorage.Shared:FindFirstChild("Data")
+            and ReplicatedStorage.Shared.Data:FindFirstChild("Icons")
+        if mod then
+            TowerIcons = require(mod).Towers
+            print("✅ TowerIcons")
         end
     end)
     
@@ -109,9 +106,16 @@ end
 
 -- СРАЗУ ЗАГРУЖАЕМ МОДУЛИ (НЕ В ФОНЕ!)
 task.spawn(function()
+    -- Ждём пока попадём в игру, не в лобби
+    while true do
+        local inGame = playerGui:FindFirstChild("ReactUniversalHotbar")
+        if inGame then break end
+        task.wait(2)
+    end
+    
     task.wait(2)
     loadModules()
-    if UI and UI.TowerScroll and UI.TowerScroll.Parent then
+    if UI and UI.TowerScroll then
         createTowerButtons()
     end
 end)
@@ -3211,37 +3215,23 @@ local function createTowerButtons()
         if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
     end
     
-    -- Пробуем загрузить если ещё нет
-    if not InventoryStore then
-        pcall(loadModules)
-    end
-    
-    -- НЕТ RETURN! Просто берём башни как можем
+    -- НЕ вызываем loadModules тут! Просто берём что есть
     local unlocked = getUnlockedTowers()
     
     local count = 0
     for _ in pairs(unlocked) do count = count + 1 end
     
     if count == 0 then
-        -- Показываем загрузку но НЕ блокируем остальной UI
-        local errorLabel = Instance.new("TextLabel")
-        errorLabel.Size = UDim2.new(1, -10, 1, 0)
-        errorLabel.BackgroundTransparency = 1
-        errorLabel.Text = "⏳ Загрузка башен..."
-        errorLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-        errorLabel.TextSize = 10
-        errorLabel.Font = Enum.Font.GothamBold
-        errorLabel.Parent = UI.TowerScroll
-        
-        task.delay(3, function()
-            if UI.TowerScroll and UI.TowerScroll.Parent then
-                createTowerButtons()
-            end
-        end)
-        return  -- тут return ок, это только башни не показались
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, -10, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "⏳ Башни загружаются..."
+        lbl.TextColor3 = Color3.fromRGB(255, 200, 100)
+        lbl.TextSize = 10
+        lbl.Font = Enum.Font.GothamBold
+        lbl.Parent = UI.TowerScroll
+        return
     end
-    
-    print("🗼 Найдено башен: " .. count)
     
     local sorted = {}
     for name in pairs(unlocked) do table.insert(sorted, name) end
@@ -5153,5 +5143,4 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
-
 
