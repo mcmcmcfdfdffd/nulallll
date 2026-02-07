@@ -111,6 +111,9 @@ end
 task.spawn(function()
     task.wait(2)
     loadModules()
+    if UI and UI.TowerScroll and UI.TowerScroll.Parent then
+        createTowerButtons()
+    end
 end)
 
 local DEFAULT_BOUNDARY_SIZE = 1.5
@@ -3202,22 +3205,15 @@ end
 applyLanguage()
 
 local function createTowerButtons()
+    if not UI.TowerScroll then return end
+    
     for _, child in pairs(UI.TowerScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
+        if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
     end
     
-    -- ПРОВЕРЯЕМ ЧТО МОДУЛИ ЗАГРУЖЕНЫ
+    -- Если модули ещё не загружены — пробуем загрузить
     if not InventoryStore then
-        print("❌ InventoryStore не загружен!")
-        local errorLabel = Instance.new("TextLabel")
-        errorLabel.Size = UDim2.new(1, -10, 1, 0)
-        errorLabel.BackgroundTransparency = 1
-        errorLabel.Text = "⚠️ Модули не загружены!\nПерезапусти скрипт"
-        errorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        errorLabel.TextSize = 10
-        errorLabel.Font = Enum.Font.GothamBold
-        errorLabel.Parent = UI.TowerScroll
-        return
+        loadModules()
     end
     
     local unlocked = getUnlockedTowers()
@@ -3227,15 +3223,21 @@ local function createTowerButtons()
     for _ in pairs(unlocked) do count = count + 1 end
     
     if count == 0 then
-        print("❌ Нет разблокированных башен!")
         local errorLabel = Instance.new("TextLabel")
         errorLabel.Size = UDim2.new(1, -10, 1, 0)
         errorLabel.BackgroundTransparency = 1
-        errorLabel.Text = "⚠️ Нет башен в инвентаре"
+        errorLabel.Text = "⏳ Загрузка..."
         errorLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
         errorLabel.TextSize = 10
         errorLabel.Font = Enum.Font.GothamBold
         errorLabel.Parent = UI.TowerScroll
+        
+        -- Попробовать снова через 2 секунды
+        task.delay(2, function()
+            if UI.TowerScroll and UI.TowerScroll.Parent then
+                createTowerButtons()
+            end
+        end)
         return
     end
     
@@ -3260,7 +3262,6 @@ local function createTowerButtons()
         icon.BackgroundTransparency = 1
         icon.Parent = btn
         
-        -- ЗАГРУЖАЕМ ИКОНКУ
         pcall(function()
             if TowerIcons and TowerIcons[towerName] then
                 icon.Image = TowerIcons[towerName].Default or ""
@@ -5152,5 +5153,4 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
-
 
