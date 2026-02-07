@@ -65,22 +65,29 @@ local function loadModules()
     end)
     
     -- InventoryStore
-    pcall(function()
-        local stores = ReplicatedStorage:FindFirstChild("Client")
-        if stores then
-            local path1 = stores:FindFirstChild("Interfaces")
-            if path1 then
-                local path2 = path1:FindFirstChild("NewInterface")
-                if path2 then
-                    local path3 = path2:FindFirstChild("Stores")
-                    if path3 and path3:FindFirstChild("Inventory") then
-                        InventoryStore = require(path3.Inventory)
-                        print("✅ InventoryStore")
-                    end
+pcall(function()
+    local client = ReplicatedStorage:FindFirstChild("Client")
+    if client then
+        local interfaces = client:FindFirstChild("Interfaces")
+        if interfaces then
+            -- Пробуем сначала LegacyInterface (новый путь)
+            local container = interfaces:FindFirstChild("LegacyInterface")
+            
+            -- Если нет — пробуем NewInterface (старый путь)
+            if not container then
+                container = interfaces:FindFirstChild("NewInterface")
+            end
+            
+            if container then
+                local stores = container:FindFirstChild("Stores")
+                if stores and stores:FindFirstChild("Inventory") then
+                    InventoryStore = require(stores.Inventory)
+                    print("✅ InventoryStore (" .. container.Name .. ")")
                 end
             end
         end
-    end)
+    end
+end)
     
     -- TowerIcons
     pcall(function()
@@ -5145,4 +5152,5 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
+
 
