@@ -110,10 +110,8 @@ task.spawn(function()
     while true do
         local inGame = playerGui:FindFirstChild("ReactUniversalHotbar")
         if inGame then break end
-        task.wait(2)
     end
     
-    task.wait(2)
     loadModules()
     if UI and UI.TowerScroll then
         createTowerButtons()
@@ -5143,4 +5141,5 @@ print("")
 print("Queue on teleport:")
 print("  🔄 QUEUE: ON - скрипт загрузится после ТП")
 print("==========================================")
+
 
